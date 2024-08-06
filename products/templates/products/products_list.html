@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Products Listing</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- jquery data tabel and css fiels -->
+    <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css"
+    />
+    <!-- Dropzone -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css"
+    />
+    <!-- style for datatable -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'products/css/styles.css' %}" />
+    <!-- custom style for dropzone and datatable -->
+    <style>
+      /* Modal styles */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0, 0, 0);
+        background-color: rgba(0, 0, 0, 0.4);
+        padding-top: 60px;
+      }
+
+      .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+      }
+
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+
+      .close:hover,
+      .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      /* DataTable styles */
+
+      table.dataTable {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 20px 0;
+      }
+      table.dataTable th,
+      table.dataTable td {
+        padding: 8px;
+        text-align: center;
+        border-bottom: 1px solid #ddd;
+      }
+      table.dataTable th {
+        background-color: #f4f4f4;
+        color: #333;
+      }
+      table.dataTable tr:hover {
+        background-color: #f1f1f1;
+      }
+      .dataTables_wrapper .dataTables_paginate .paginate_button {
+        padding: 5px 10px;
+        margin: 0 2px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        background: #f9f9f9;
+        cursor: pointer;
+      }
+      .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: #007bff;
+        color: #fff;
+      }
+      button {
+        margin: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <button id="openModalBtn">Upload File</button>
+
+    <!-- DataTable to show products -->
+    <table id="products-table">
+      <thead>
+        <tr>
+          <th>Sl No</th>
+          <th>Product Name</th>
+          <th>Lowest Price</th>
+          <th>Variations & Stock</th>
+          <th>Last Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Data will be populated by DataTables -->
+      </tbody>
+    </table>
+
+    <!-- Dropezone -->
+    <div id="uploadModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <div class="dropzone" id="dropzone">
+          <p>Drag & drop files here or click to upload</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dynamically load DataTable and handle the file upload with dropezone -->
+    <script>
+      // Initialize Dropzone
+      Dropzone.autoDiscover = false;
+
+      new Dropzone("#dropzone", {
+        url: '{% url "upload_products" %}', // Test URL
+        acceptedFiles: ".xls,.xlsx",
+        maxFilesize: 2, // MB
+        init: function () {
+          this.on("success", function (file, response) {
+            alert("File uploaded successfully:", response);
+            this.removeAllFiles();
+            modal.style.display = "none";
+            $("#products-table").DataTable().ajax.reload();
+          });
+          this.on("error", function (file, response) {
+            console.log(response);
+            alert("Error uploading file: " + response.error);
+            this.removeAllFiles();
+            modal.style.display = "none";
+          });
+        },
+      });
+
+      // Get modal element
+      var modal = document.getElementById("uploadModal");
+
+      // Get open button
+      var btn = document.getElementById("openModalBtn");
+
+      // Get close button
+      var span = document.getElementsByClassName("close")[0];
+
+      // Open the modal
+      btn.onclick = function () {
+        modal.style.display = "block";
+      };
+
+      // Close the modal
+      span.onclick = function () {
+        modal.style.display = "none";
+      };
+
+      // Close the modal if clicked outside of it
+      window.onclick = function (event) {
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      };
+      $(document).ready(function () {
+        $("#products-table").DataTable({
+          ajax: {
+            url: '{% url "products_list" %}',
+            dataSrc: "",
+            complete: function (xhr, textStatus) {
+              // Log the entire response
+              console.log("AJAX request complete");
+              console.log("Status:", textStatus);
+              console.log("Response:", xhr.responseJSON);
+            },
+          },
+          columns: [
+            { data: "id" },
+            { data: "name" },
+            { data: "lowest_price" },
+            {
+              data: null,
+              render: function (data, type, row) {
+                // Generate HTML for nested table
+                var variations = data.variations
+                  .map(function (variation) {
+                    return `<tr><td>${variation.variation_text}</td><td>${variation.stock}</td></tr>`;
+                  })
+                  .join("");
+                console.log(variations);
+                return `
+                          <table class="display nested-table" style="width: 100%; border: 1px solid #ddd; border-collapse: collapse;">
+                              <thead>
+                                  <tr>
+                                      <th>Variation Text</th>
+                                      <th>Stock</th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                  ${variations}
+                              </tbody>
+                          </table>
+                      `;
+              },
+            },
+            { data: "last_updated" },
+          ],
+        });
+      });
+    </script>
+  </body>
+</html>
