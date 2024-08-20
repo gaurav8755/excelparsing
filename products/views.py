@@ -4,7 +4,6 @@ from django.views.decorators.csrf import csrf_exempt
 from .models import Product, ProductVariation
 from django.shortcuts import render
 import pytz
-from datetime import datetime
 
 def format_datetime(dt):
     # Define the custom date format
@@ -18,7 +17,7 @@ def format_datetime(dt):
 
 def products_list(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        products = Product.objects.all()
+        products = Product.objects.prefetch_related("variations").all()
 
         # Manually construct the response data
         data = []
@@ -77,7 +76,7 @@ def upload_products(request):
                 stock = row.get('Stock')
 
                 # Check if the row contains valid data
-                if pd.isna(product_name) or pd.isna(variation_text) or not isinstance(stock, (int, float)):
+                if pd.isna(product_name) or pd.isna(variation_text) or pd.isna(stock) or not isinstance(stock, (int, float)):
                     return JsonResponse({'error': 'Invalid data in file. Ensure all rows have valid product name, variation, and stock.'}, status=400)
 
                 # Get or create product

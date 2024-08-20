@@ -3,14 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <title>Products Listing</title>
+    <!--jquery cdn-->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- jquery data tabel and css fiels -->
+    <!-- cdn data tabel and css fiels -->
     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
     <link
       rel="stylesheet"
       href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css"
     />
-    <!-- Dropzone -->
+    <!-- cdn Dropzone -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js"></script>
     <link
       rel="stylesheet"
@@ -37,8 +38,14 @@
         background-color: #fefefe;
         margin: 5% auto;
         padding: 20px;
-        border: 1px solid #888;
+        border-radius: 20px;
         width: 80%;
+      }
+      .dropzone{
+        border-radius: 20px;
+      }
+      .dropzone:hover,.dropzone:focus{
+        color: hwb(110 27% 31%);
       }
 
       .close {
@@ -46,19 +53,22 @@
         float: right;
         font-size: 28px;
         font-weight: bold;
+        border: 1px solid;
+        padding-left: 5px;
+        padding-right: 5px;
+        border-top-right-radius: 20px;
       }
-
       .close:hover,
       .close:focus {
         color: black;
         text-decoration: none;
         cursor: pointer;
+        background-color: hsl(0, 46%, 55%)
       }
 
       /* DataTable styles */
 
       table.dataTable {
-        border-collapse: collapse;
         width: 100%;
         margin: 20px 0;
       }
@@ -70,7 +80,6 @@
       }
       table.dataTable th {
         background-color: #f4f4f4;
-        color: #333;
       }
       table.dataTable tr:hover {
         background-color: #f1f1f1;
@@ -87,7 +96,7 @@
         background: #007bff;
         color: #fff;
       }
-      button {
+      #openModalBtn {
         margin: 10px;
       }
     </style>
@@ -117,7 +126,6 @@
       <div class="modal-content">
         <span class="close">&times;</span>
         <div class="dropzone" id="dropzone">
-          <p>Drag & drop files here or click to upload</p>
         </div>
       </div>
     </div>
@@ -130,48 +138,40 @@
       new Dropzone("#dropzone", {
         url: '{% url "upload_products" %}', // Test URL
         acceptedFiles: ".xls,.xlsx",
-        maxFilesize: 2, // MB
         init: function () {
           this.on("success", function (file, response) {
             alert("File uploaded successfully:", response);
             this.removeAllFiles();
-            modal.style.display = "none";
+            modal.css("display","none");
             $("#products-table").DataTable().ajax.reload();
           });
           this.on("error", function (file, response) {
             console.log(response);
             alert("Error uploading file: " + response.error);
             this.removeAllFiles();
-            modal.style.display = "none";
+            modal.css("display","none");
           });
         },
       });
 
-      // Get modal element
-      var modal = document.getElementById("uploadModal");
 
-      // Get open button
-      var btn = document.getElementById("openModalBtn");
-
-      // Get close button
-      var span = document.getElementsByClassName("close")[0];
-
-      // Open the modal
-      btn.onclick = function () {
-        modal.style.display = "block";
-      };
+      var modal =  $("#uploadModal");
+      $("#openModalBtn").on("click", function() {
+        modal.css("display","block");
+    });
 
       // Close the modal
-      span.onclick = function () {
-        modal.style.display = "none";
-      };
+      $(".close").on("click",function(){
+        modal.css("display","none");
+      });
 
       // Close the modal if clicked outside of it
-      window.onclick = function (event) {
-        if (event.target == modal) {
-          modal.style.display = "none";
+      $(window).click(function(event) {
+        console.log(event.target);
+        if (event.target === modal[0]) { 
+          modal.css("display", "none");
         }
-      };
+      });
       $(document).ready(function () {
         $("#products-table").DataTable({
           ajax: {
@@ -192,7 +192,7 @@
               data: null,
               render: function (data, type, row) {
                 // Generate HTML for nested table
-                var variations = data.variations
+                var variations = row.variations
                   .map(function (variation) {
                     return `<tr><td>${variation.variation_text}</td><td>${variation.stock}</td></tr>`;
                   })
