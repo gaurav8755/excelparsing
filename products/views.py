@@ -21,10 +21,11 @@ def products_list(request):
 
         # Manually construct the response data
         data = []
+        sno =1
         for product in products:
             variations = product.variations.all()
             product_data = {
-                'id': product.id,
+                'id': sno,
                 'name': product.name,
                 # Convert Decimal to string for JSON compatibility
                 'lowest_price': str(product.lowest_price),
@@ -37,6 +38,7 @@ def products_list(request):
                 'last_updated': format_datetime(product.last_updated)
             }
             data.append(product_data)
+            sno+=1
 
         # Return JsonResponse
         return JsonResponse(data, safe=False)
