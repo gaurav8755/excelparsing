@@ -1,0 +1,22 @@
+
+services:
+  web:
+    build: .
+    hostname: web
+    expose:
+      - '5000'
+    volumes:
+      - db-data:/app/db
+  
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+  
+      
+volumes:
+  db-data:
+    
+

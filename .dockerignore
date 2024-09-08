@@ -1,0 +1,9 @@
+myvenv/
+
+from python:tag
+workdir /app/
+copy . 'requirements.txt'
+run "pip install requirements.txt"
+copy . .
+
+cmd ["py manage.py","runserver"]
